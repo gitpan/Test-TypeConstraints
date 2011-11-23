@@ -3,11 +3,17 @@ abstract: 'testing whether some value is valid as (Moose|Mouse)::Meta::TypeConst
 author:
   - 'Keiji Yoshimi <walf443 at gmail dot com>'
 build_requires:
-  ExtUtils::MakeMaker: 6.42
+  ExtUtils::MakeMaker: 6.62
+  IO::Scalar: 0
+  Test::LoadAllModules: 0
+  Test::More: 0.98
+  Test::Requires: 0
+  Test::Tester: 0
 configure_requires:
-  ExtUtils::MakeMaker: 6.42
+  ExtUtils::MakeMaker: 6.62
 distribution_type: module
-generated_by: 'Module::Install version 1.01'
+dynamic_config: 1
+generated_by: 'Module::Install version 1.04'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -28,4 +34,4 @@ requires:
 resources:
   license: http://dev.perl.org/licenses/
   repository: git://github.com/walf443/p5-test-type_constraints.git
-version: 0.02
+version: 0.03
