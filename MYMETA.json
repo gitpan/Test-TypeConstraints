@@ -1,0 +1,60 @@
+{
+   "abstract" : "testing whether some value is valid as (Moose|Mouse)::Meta::TypeConstraint",
+   "author" : [
+      "Keiji Yoshimi <walf443 at gmail dot com>"
+   ],
+   "dynamic_config" : 0,
+   "generated_by" : "Module::Install version 1.06, CPAN::Meta::Converter version 2.112150",
+   "license" : [
+      "perl_5"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "name" : "Test-TypeConstraints",
+   "no_index" : {
+      "directory" : [
+         "inc",
+         "t",
+         "xt"
+      ]
+   },
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "6.59",
+            "IO::Scalar" : 0,
+            "Test::LoadAllModules" : 0,
+            "Test::More" : "0.98",
+            "Test::Requires" : 0,
+            "Test::Tester" : 0
+         }
+      },
+      "configure" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "6.59"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "Data::Dumper" : 0,
+            "Mouse::Util::TypeConstraints" : 0,
+            "Scalar::Util" : 0,
+            "Test::Builder" : 0,
+            "Test::More" : "0.98",
+            "perl" : "5.008001"
+         }
+      }
+   },
+   "release_status" : "stable",
+   "resources" : {
+      "license" : [
+         "http://dev.perl.org/licenses/"
+      ],
+      "repository" : {
+         "url" : "git://github.com/walf443/p5-test-type_constraints.git"
+      }
+   },
+   "version" : "0.04"
+}
