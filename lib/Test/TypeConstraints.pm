@@ -2,7 +2,7 @@ package Test::TypeConstraints;
 use strict;
 use warnings;
 use 5.008001;
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 use Exporter 'import';
 use Test::More;
 use Test::Builder;
@@ -10,18 +10,70 @@ use Mouse::Util::TypeConstraints ();
 use Scalar::Util ();
 use Data::Dumper;
 
-our @EXPORT = qw/ type_isa type_does /;
+our @EXPORT = qw/ type_isa type_does type_isnt type_doesnt /;
 
 sub type_isa {
-    my ($got, $type, $test_name, %options) = @_;
+    my ($got, $type, @rest) = @_;
 
-    my $tc;
+    my $tc = _make_type_constraint(
+        $type,
+        \&Mouse::Util::TypeConstraints::find_or_create_isa_type_constraint
+    );
+
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
+    return _type_constraint_ok( $got, $tc, @rest );
+}
+
+sub type_does {
+    my ($got, $type, @rest) = @_;
+
+    my $tc = _make_type_constraint(
+        $type,
+        \&Mouse::Util::TypeConstraints::find_or_create_does_type_constraint
+    );
+
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
+    return _type_constraint_ok( $got, $tc, @rest );
+}
+
+sub type_isnt {
+    my ($got, $type, @rest) = @_;
+
+    my $tc = _make_type_constraint(
+        $type,
+        \&Mouse::Util::TypeConstraints::find_or_create_isa_type_constraint
+    );
+
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
+    return _type_constraint_not_ok( $got, $tc, @rest );
+}
+
+sub type_doesnt {
+    my ($got, $type, @rest) = @_;
+
+    my $tc = _make_type_constraint(
+        $type,
+        \&Mouse::Util::TypeConstraints::find_or_create_does_type_constraint
+    );
+
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
+    return _type_constraint_not_ok( $got, $tc, @rest );
+}
+
+sub _make_type_constraint {
+    my($type, $make_constraint) = @_;
+
     # duck typing for (Mouse|Moose)::Meta::TypeConstraint
     if ( Scalar::Util::blessed($type) && $type->can("check") ) {
-        $tc = $type;
+        return $type;
     } else {
-        $tc = Mouse::Util::TypeConstraints::find_or_create_isa_type_constraint($type);
+        return $make_constraint->($type);
     }
+}
+
+sub _type_constraint_ok {
+    my ($got, $tc, $test_name, %options) = @_;
+
     local $Test::Builder::Level = $Test::Builder::Level + 1;
     my $ret = ok(check_type($tc, $got, %options), $test_name || ( $tc->name . " types ok" ) )
         or diag(sprintf('type: "%s" expected. but got %s', $tc->name, Dumper($got)));
@@ -29,19 +81,12 @@ sub type_isa {
     return $ret;
 }
 
-sub type_does {
-    my ($got, $role, $test_name, %options) = @_;
+sub _type_constraint_not_ok {
+    my ($got, $tc, $test_name, %options) = @_;
 
-    my $tc;
-    # duck typing for (Mouse|Moose)::Meta::TypeConstraint
-    if ( Scalar::Util::blessed($role) && $role->can("check") ) {
-        $tc = $role;
-    } else {
-        $tc = Mouse::Util::TypeConstraints::find_or_create_does_type_constraint($role);
-    }
     local $Test::Builder::Level = $Test::Builder::Level + 1;
-    my $ret = ok(check_type($tc, $got, %options), $test_name || ( $tc->name . " types ok" ) )
-        or diag(sprintf('role: "%s" expected. but got %s', $tc->name, Dumper($got)));
+    my $ret = ok(!check_type($tc, $got, %options), $test_name || ( $tc->name . " types ok" ) )
+        or diag(sprintf('%s is not supposed to be of type "%s"', $tc->name, Dumper($got)));
 
     return $ret;
 }
@@ -50,8 +95,9 @@ sub check_type {
     my ($tc, $value, %options) = @_;
 
     return 1 if $tc->check($value);
-    if ( $options{coerce} ) {
+    if ( my $coerce_check = $options{coerce} ) {
         my $new_val = $tc->coerce($value);
+        $coerce_check->($new_val) if ref $coerce_check;
         return 1 if $tc->check($new_val);
     }
 
@@ -83,20 +129,35 @@ Test::TypeConstraints is for testing whether some value is valid as (Moose|Mouse
     $typename_or_type is a Classname or Mouse::Meta::TypeConstraint name or "Mouse::Meta::TypeConstraint" object or "Moose::Meta::TypeConstraint::Class" object.
     %options is Hash. value is followings:
 
-=head3 coerce: Bool
+=head3 coerce: Bool or CodeRef
 
-        try coercion when checking value.
+If true, it will try coercion when checking a value.
+
+If a CodeRef is given, it will be run and passed in the coerced value
+for additional testing.
+
+    type_isa $value, "Some::Class", "coerce to Some::Class", coerce => sub {
+        isa_ok $_[0], "Some::Class";
+        is $_[0]->value, $value;
+    };
 
 =head2 type_does($got, $rolename_or_role, $test_name, %options)
 
     $got is value for checking.
     $typename_or_type is a Classname or Mouse::Meta::TypeConstraint name or "Mouse::Meta::TypeConstraint" object or "Moose::Meta::TypeConstraint::Role" object.
-
     %options is Hash. value is followings:
 
-=head3 coerce: Bool
+=head3 coerce: Bool or CodeRef
 
-        try coercion when checking value.
+Same as type_isa's coerce option.
+
+=head2 type_isnt($got, $typename_or_type, $test_name, %options)
+
+=head2 type_doesnt($got, $rolename_or_role, $test_name, %options)
+
+The opposite of C<type_isa> and C<type_doesnt> respectively and takes
+the same arguments and options.  Checks that $got is I<not> of the
+given type or role.
 
 =head1 AUTHOR
 
@@ -104,9 +165,18 @@ Keiji Yoshimi E<lt>walf443 at gmail dot comE<gt>
 
 =head1 THANKS TO
 
+=over 
+
+=item
+schwern
+
+=item
 gfx
 
+=item
 tokuhirom
+
+=back
 
 =head1 SEE ALSO
 

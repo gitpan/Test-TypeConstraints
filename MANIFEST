@@ -22,6 +22,8 @@ t/00_compile.t
 t/01_basic.t
 t/02_failcase.t
 t/03_moose.t
+t/04_coerce.t
+t/05_negative.t
 xt/02_perlcritic.t
 xt/03_pod.t
 xt/perlcriticrc
